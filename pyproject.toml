@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "screenbench"
+version = "0.1.0"
+description = "Frozen-benchmark evaluation harness for virtual screening (pytest for VS)"
+requires-python = ">=3.10"
+dependencies = ["rdkit", "numpy", "pandas", "scikit-learn", "meeko"]
+
+[project.scripts]
+screenbench = "screenbench.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["screenbench*"]
