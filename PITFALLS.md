@@ -101,3 +101,31 @@
 - 修复：`metrics.evaluate` 增加 `score_dir="lower_better"` 参数，内部统一翻转（cox2 修正后 AUC=0.954）
 - 教训：**指标层必须显式声明打分方向**；"结果差得离谱"永远是查 bug 的信号，不是调参的信号。此坑直接进 README 的设计原则
 
+---
+
+## 第二日（2026-10-21）：v0.2 施工
+
+**#17 采样变更会污染缓存（设计层坑）**
+- 场景：sweep 用 30/300 采样，但 lig pdbqt 缓存和 dock 输出目录与 60/600 共用——`parse_results` 会把旧采样的大分子集一起读进来，报告声称 30/300 实际算的是 660 个
+- 修复：① dock 输出目录带采样标签（`exh4_a30_d300`）；② `parse_results` 增加 `keep` 参数按采样名单过滤
+- 教训：**缓存的键必须包含所有影响语义的参数**，否则"缓存加速"变成"缓存串味"
+
+**#18 DUD-E 第二基准的三条路一晚全灭**
+- 官方直链：从 503 变 404——服务器端文件布局已改，下载走 /generate 表单（不可脚本化）
+- Figshare 镜像（4.32GB）：API 和页面都 403（挡数据中心/代理 IP）
+- jsdelivr 镜像 biobricks-ai/dude：文件列表 API 超时（仓库太大）
+- 结论：DUD-E 收编延后；DEKOIS(81 靶点) 为主基准足够支撑 v0.x 叙事
+- 优化点：找一个可脚本化的 DUD-E 子集源（社区 mirror 待调研）
+
+**#19 verify 的路径 bug + shell 的 `&&`+`&` 组合拳**
+- `verify` 沿用 DUD-E 的 `data/frozen/<set>/<tg>` 路径，但 dekois 布局实际在 `data/dekois_airdd/DEKOIS/<tg>`——manifest 建得了、校验找不到文件
+- 更蠢的是启动命令 `verify && nohup ... & echo`：`&` 把整个 `&&` 链丢后台，verify 失败短路后 nohup 根本没跑，还打印了假的 PID
+- 教训：后台启动要单独成行；"启动成功"必须以进程/产物为证，不能信 echo
+
+**redocking 验证（v0.2 收官件）✅**
+- cox2：RMSD **1.12 Å**（阈值 2 Å），affinity -11.25，exh=8 单配体 15.5s
+- 整条制备+docking 管线（obabel 受体 + Meeko 配体 + 盒子规则 + vina）自此有正确性证明
+- 实现注意：RMSD 不绕 sdf 转换——vina 输出 pdbqt 保持输入原子顺序，直接对 MODEL 1 重原子坐标逐对计算（避开 obabel 往返的拓扑损伤风险）
+
+**全 81 靶点 sweep 已挂**：30 actives + 300 decoys/靶点（覆盖参数已显式记录进报告，不静默）、exh4、13 进程。预计 10+ 小时，缓存可断点续跑。
+

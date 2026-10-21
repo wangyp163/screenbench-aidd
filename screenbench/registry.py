@@ -35,7 +35,7 @@ def build_manifest_dekois(set_name: str = "dekois-airdd", targets: list[str] | N
     """冻结 DEKOIS(THU airdd 布局) 基准：逐文件 sha256 + 采样规则锁死。"""
     tgs = targets or sorted(p.name for p in DEKOIS_ROOT.iterdir() if p.is_dir())
     manifest = {
-        "set": set_name, "layout": "dekois-airdd",
+        "set": set_name, "layout": "dekois-airdd", "version": 2,
         "source": "hf-mirror THU-ATOM/dekois_airdd (DEKOIS 2.0, 81 targets)",
         "targets": {}, "sampling": DEKOIS_SAMPLING, "box": BOX_RULE,
     }
@@ -49,17 +49,23 @@ def build_manifest_dekois(set_name: str = "dekois-airdd", targets: list[str] | N
     return path
 
 
-def sample_indices_dekois(set_name: str, tg: str) -> dict:
-    """按分子索引确定性采样（与 $$$$ 计数/RDKit supplier 索引一致）。"""
+def sample_indices_dekois(set_name: str, tg: str, n_actives: int | None = None,
+                          n_decoys: int | None = None) -> dict:
+    """按分子索引确定性采样（与 $$$$ 计数/RDKit supplier 索引一致）。
+
+    n_* 覆盖参数用于 sweep 等场景；覆盖会被记录进报告（不静默）。
+    注意：不同 k 的 sample 结果不是嵌套子集。
+    """
     m = load_manifest(set_name)
     s = m["sampling"]
     rng = random.Random(s["seed"])
+    want = {"actives": n_actives or s["n_actives"], "decoys": n_decoys or s["n_decoys"]}
     out = {}
     for kind, fname, key in (("a", "actives.sdf", "actives"), ("d", "decoys.sdfgz", "decoys")):
         n = _count_sdf(DEKOIS_ROOT / tg / fname)
-        k = min(s[f"n_{key}"], n)
-        out[key] = sorted(rng.sample(range(n), k))
+        out[key] = sorted(rng.sample(range(n), min(want[key], n)))
     out["seed"] = s["seed"]
+    out["override"] = {k: v for k, v in want.items() if v != s.get(f"n_{k}")}
     out["n_available"] = {"actives": _count_sdf(DEKOIS_ROOT / tg / "actives.sdf"),
                           "decoys": _count_sdf(DEKOIS_ROOT / tg / "decoys.sdfgz")}
     return out
@@ -120,11 +126,15 @@ def load_manifest(set_name: str) -> dict:
 def verify(set_name: str) -> list[str]:
     """校验冻结集完整性：任何文件哈希不符即报出（gate 的前置）。"""
     m = load_manifest(set_name)
+    root = DEKOIS_ROOT if m.get("layout") == "dekois-airdd" else DATA / set_name
     bad = []
     for tg, files in m["targets"].items():
         for fname, want in files.items():
-            got = _sha256(DATA / set_name / tg / fname)
-            if got != want:
+            p = root / tg / fname
+            if not p.is_file():
+                bad.append(f"{tg}/{fname}: 文件缺失")
+                continue
+            if _sha256(p) != want:
                 bad.append(f"{tg}/{fname}: sha256 mismatch")
     return bad
 

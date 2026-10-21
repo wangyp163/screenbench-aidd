@@ -53,12 +53,16 @@ def run_vina(receptor: Path, lig_dir: Path, out_dir: Path, box: dict,
     return {"ligands_total": len(ligs), "docked_this_run": sum(counts)}
 
 
-def parse_results(out_dir: Path) -> dict[str, float]:
+def parse_results(out_dir: Path, keep: set[str] | None = None) -> dict[str, float]:
+    """解析各配体 best-mode affinity。keep：只保留指定 ligand 名（采样隔离，防缓存串味）。"""
     scores = {}
     for f in sorted(out_dir.glob("*_out.pdbqt")):
+        stem = f.stem[:-4] if f.stem.endswith("_out") else f.stem
+        if keep is not None and stem not in keep:
+            continue
         m = RESULT_RE.search(f.read_text(errors="ignore"))
         if m:
-            scores[f.stem[:-4] if f.stem.endswith("_out") else f.stem] = float(m.group(1))
+            scores[stem] = float(m.group(1))
     return scores
 
 

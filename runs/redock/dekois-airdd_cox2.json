@@ -1,0 +1,12 @@
+{
+  "set": "dekois-airdd",
+  "target": "cox2",
+  "engine": "AutoDock Vina v1.2.5",
+  "exhaustiveness": 8,
+  "n_heavy_atoms": 26,
+  "best_affinity": -11.248,
+  "rmsd_A": 1.12,
+  "threshold_A": 2.0,
+  "pass": true,
+  "seconds": 15.5
+}

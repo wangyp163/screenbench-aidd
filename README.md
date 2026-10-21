@@ -36,17 +36,28 @@ screenbench run --set dekois-airdd --engine vina --seed 42 --exhaustiveness 4
 screenbench audit --csv your_library.csv                                 # 泄漏/近重复审计
 ```
 
+## 管线正确性：redocking 验证 ✅
+
+晶体配体重对接回自己的口袋，**cox2 RMSD = 1.12 Å**（阈值 2 Å，affinity -11.25）——
+受体制备、盒子规则、配体转换、docking 全链路有正确性证明：
+
+```bash
+screenbench redock --set dekois-airdd --target cox2   # → RMSD=1.12Å PASS
+```
+
 ## 组件
 
 | 组件 | 职责 | 状态 |
 |---|---|---|
-| registry | 冻结 manifest（sha256 + 采样 seed + 盒子规则） | ✅ |
-| engines | Vina 适配器（声明式契约，分片并行批处理） | ✅ vina |
+| registry | 冻结 manifest（sha256 + 采样 seed + 盒子规则，81 靶点 v2） | ✅ |
+| engines | Vina 适配器（声明式契约，分片并行，采样隔离缓存） | ✅ vina |
 | metrics | EF1%/EF5%/AUC，显式打分方向 | ✅ |
-| report/gate | JSON+MD 报告、断言门禁 | ✅ |
+| report/gate | JSON+MD 报告、断言门禁（独立 `gate` 子命令） | ✅ |
 | audit | 骨架多样性 + Tanimoto 近重复 | ✅ |
-| redocking RMSD 验证 | 晶体配体重对接 <2Å 证明管线正确性 | 🔜 v0.2 |
-| 更多引擎 / 全 81 靶点 / DUD-E 布局 | smina、AutoDock-GPU | 🔜 |
+| redock | RMSD <2Å 管线验证 | ✅ |
+| 81 靶点全量 sweep | 30a+300d/靶点 | 🔄 跑分中 |
+| DUD-E 第二基准 | biased vs unbiased 对比 | 🔜 源不可达，见 PITFALLS #18 |
+| 更多引擎 | smina、AutoDock-GPU | 🔜 |
 
 ## 开发实录
 
