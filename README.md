@@ -61,7 +61,8 @@ screenbench redock --set dekois-airdd --target cox2   # → RMSD=1.12Å PASS
 
 ## 开发实录
 
-- **[PITFALLS.md](PITFALLS.md)**：16 个真实踩坑（DUD-E 503 返回 HTML 错误页、hf-mirror 限速 40 倍绕行、打分方向反了的首轮翻车……）——评测基建为什么难，这里全是证据
+- **[PITFALLS.md](PITFALLS.md)**：19 个真实踩坑（DUD-E 503 返回 HTML 错误页、hf-mirror 限速 40 倍绕行、打分方向反了的首轮翻车……）——评测基建为什么难，这里全是证据
+- **[LEARNING.md](LEARNING.md)**：项目背后的知识沉淀——docking 原理/制备链路/评测科学/基准设计，每个概念配自测题，learning in public
 - **[PROJECT.md](PROJECT.md)**：设计蓝图与定位
 - `phase0_split_leakage.py`：项目的前身实验——random vs scaffold split 泄漏实测（随机切分虚高 2.6%，为什么冻结评测集必须配防泄漏切分）
 
